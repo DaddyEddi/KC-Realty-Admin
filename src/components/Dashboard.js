@@ -61,7 +61,9 @@ function Dashboard() {
   }
 
   useEffect(() => {
-    fetchStats()
+  fetchStats()
+  const interval = setInterval(fetchStats, 60000) // каждые 60 секунд
+  return () => clearInterval(interval) // очистка при закрытии
   }, [])
 
   const cards = [

@@ -6,7 +6,9 @@ function Realtors() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchRealtors()
+  fetchData()
+  const interval = setInterval(fetchData, 60000)
+  return () => clearInterval(interval)
   }, [])
 
   const fetchRealtors = async () => {
