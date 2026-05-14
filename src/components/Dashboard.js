@@ -13,8 +13,7 @@ function Dashboard() {
     todayLeads: 0
   })
   const [chartData, setChartData] = useState([])
-  const [loading, setLoading] = useState(true)
-
+  const [loading, setLoading] = 
   const fetchStats = async () => {
     try {
       const now = new Date().toISOString()
@@ -68,7 +67,7 @@ function Dashboard() {
     { title: 'Active Realtors', value: stats.activeRealtors, color: '#2ecc71' },
     { title: 'Trial Realtors', value: stats.trialRealtors, color: '#f39c12' },
     { title: 'Total Leads', value: stats.totalLeads, color: '#3498db' },
-    { title: 'Buy Leads', value: stats.buyLeads, color: '#27ae60' },
+    { title: 'Buy Leads', value: stats.buyLeads, color: '#9b59b6' },
     { title: 'Sell Leads', value: stats.sellLeads, color: '#e74c3c' },
     { title: 'Today Leads', value: stats.todayLeads, color: '#1abc9c' },
   ]
@@ -113,8 +112,17 @@ function Dashboard() {
             <Tooltip />
             <Legend />
             <Line type="monotone" dataKey="Total" stroke="#3498db" strokeWidth={2} dot={{ r: 4 }} />
-            <Line type="monotone" dataKey="Buy" stroke="#9b59b6" strokeWidth={2} dot={{ r: 4 }} />
+            <Line type="monotone" dataKey="Buy" stroke="#27ae60" strokeWidth={2} dot={{ r: 4 }} />
             <Line type="monotone" dataKey="Sell" stroke="#e74c3c" strokeWidth={2} dot={{ r: 4 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
+export default Dashboard
+ot={{ r: 4 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
