@@ -13,7 +13,7 @@ function Dashboard() {
     todayLeads: 0
   })
   const [chartData, setChartData] = useState([])
-  const [loading, setLoading] = 
+  const [loading, setLoading] = useState(true) 
   const fetchStats = async () => {
     try {
       const now = new Date().toISOString()
@@ -114,15 +114,6 @@ function Dashboard() {
             <Line type="monotone" dataKey="Total" stroke="#3498db" strokeWidth={2} dot={{ r: 4 }} />
             <Line type="monotone" dataKey="Buy" stroke="#27ae60" strokeWidth={2} dot={{ r: 4 }} />
             <Line type="monotone" dataKey="Sell" stroke="#e74c3c" strokeWidth={2} dot={{ r: 4 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  )
-}
-
-export default Dashboard
-ot={{ r: 4 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
