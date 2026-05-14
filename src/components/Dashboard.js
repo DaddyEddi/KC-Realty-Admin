@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 function Dashboard() {
   const navigate = useNavigate()
@@ -51,32 +51,25 @@ function Dashboard() {
         const dayLeads = leads?.filter(l => l.created_at?.startsWith(dateStr)) || []
         last14.push({
           date: label,
-          Total: dayLeads.length,
           Buy: dayLeads.filter(l => l.type === 'Buy').length,
           Sell: dayLeads.filter(l => l.type === 'Sell').length
         })
       }
       setChartData(last14)
 
-      // Top realtors
-      const leadsPerRealtor = {}
+      // Top Realtors
+      const realtorLeadsCount = {}
       leads?.forEach(l => {
         const rid = String(l.realtor_id)
-        if (!leadsPerRealtor[rid]) leadsPerRealtor[rid] = { total: 0, buy: 0, sell: 0 }
-        leadsPerRealtor[rid].total++
-        if (l.type === 'Buy') leadsPerRealtor[rid].buy++
-        else leadsPerRealtor[rid].sell++
+        realtorLeadsCount[rid] = (realtorLeadsCount[rid] || 0) + 1
       })
 
-      const top = realtors
-        ?.map(r => ({
-          id: r.id,
-          name: r.name,
-          leads: leadsPerRealtor[String(r.id)]?.total || 0,
-          buy: leadsPerRealtor[String(r.id)]?.buy || 0,
-          sell: leadsPerRealtor[String(r.id)]?.sell || 0,
-          active: r.active_until && r.active_until > now
-        }))
+      const top = realtors?.map(r => ({
+        id: r.id,
+        name: r.name,
+        leads: realtorLeadsCount[String(r.id)] || 0,
+        active: r.active_until && r.active_until > now
+      }))
         .sort((a, b) => b.leads - a.leads)
         .slice(0, 5)
 
@@ -133,7 +126,7 @@ function Dashboard() {
       </div>
 
       {/* График и Top Realtors */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '32px' }}>
 
         {/* График */}
         <div style={{
@@ -141,17 +134,16 @@ function Dashboard() {
           padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
         }}>
           <h3 style={{ marginBottom: '20px', color: '#1a1a2e' }}>📈 Leads — Last 14 Days</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={chartData}>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="Total" stroke="#3498db" strokeWidth={2} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="Buy" stroke="#27ae60" strokeWidth={2} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="Sell" stroke="#e74c3c" strokeWidth={2} dot={{ r: 3 }} />
-            </LineChart>
+              <Bar dataKey="Buy" fill="#27ae60" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Sell" fill="#e74c3c" radius={[4, 4, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
@@ -178,23 +170,23 @@ function Dashboard() {
                   <span style={{
                     width: '28px', height: '28px', borderRadius: '50%',
                     background: i === 0 ? '#f39c12' : i === 1 ? '#95a5a6' : '#cd7f32',
-                    color: 'white', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: '13px', fontWeight: 'bold', flexShrink: 0
+                    color: 'white', fontWeight: 'bold', fontSize: '13px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
                     {i + 1}
                   </span>
                   <div>
                     <div style={{ fontWeight: '600', fontSize: '14px' }}>{r.name}</div>
-                    <div style={{ fontSize: '12px', color: '#999' }}>
-                      🏠 {r.buy} Buy · 💰 {r.sell} Sell
+                    <div style={{ fontSize: '12px', color: r.active ? '#27ae60' : '#e74c3c' }}>
+                      {r.active ? '✅ Active' : '❌ Inactive'}
                     </div>
                   </div>
                 </div>
                 <div style={{
-                  fontWeight: 'bold', fontSize: '18px',
-                  color: '#3498db'
+                  fontWeight: 'bold', fontSize: '18px', color: '#3498db'
                 }}>
                   {r.leads}
+                  <span style={{ fontSize: '12px', color: '#999', fontWeight: 'normal', marginLeft: '4px' }}>leads</span>
                 </div>
               </div>
             ))
