@@ -30,9 +30,9 @@ function Leads() {
   }
 
   useEffect(() => {
-  fetchStats()
-  const interval = setInterval(fetchStats, 60000) // каждые 60 секунд
-  return () => clearInterval(interval) // очистка при закрытии
+  fetchData()
+  const interval = setInterval(fetchData, 60000)
+  return () => clearInterval(interval)
   }, [])
 
   const filtered = leads
