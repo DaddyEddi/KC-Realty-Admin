@@ -7,7 +7,9 @@ function Leads() {
   const [loading, setLoading] = useState(true)
   const [typeFilter, setTypeFilter] = useState('All')
   const [realtorFilter, setRealtorFilter] = useState('All')
-  const [viewMode, setViewMode] = useState('table') // 'table' or 'cards'
+  const [areaFilter, setAreaFilter] = useState('All')
+  const [search, setSearch] = useState('')
+  const [viewMode, setViewMode] = useState('table')
 
   const fetchData = async () => {
     try {
@@ -30,14 +32,27 @@ function Leads() {
   }
 
   useEffect(() => {
-  fetchData()
-  const interval = setInterval(fetchData, 60000)
-  return () => clearInterval(interval)
+    fetchData()
+    const interval = setInterval(fetchData, 60000)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Уникальные районы из лидов
+  const areas = ['All', ...new Set(leads.map(l => l.area).filter(Boolean))]
 
   const filtered = leads
     .filter(l => typeFilter === 'All' || l.type === typeFilter)
     .filter(l => realtorFilter === 'All' || String(l.realtor_id) === String(realtorFilter))
+    .filter(l => areaFilter === 'All' || l.area === areaFilter)
+    .filter(l => {
+      if (!search) return true
+      const q = search.toLowerCase()
+      return (
+        (l.client_name || '').toLowerCase().includes(q) ||
+        (l.phone || '').toLowerCase().includes(q)
+      )
+    })
 
   const formatDate = (date) => {
     if (!date) return '—'
@@ -58,9 +73,25 @@ function Leads() {
     <div style={{ padding: '32px', background: '#f0f2f5', minHeight: '100vh' }}>
       <h2 style={{ marginBottom: '24px', color: '#1a1a2e' }}>📋 Leads ({filtered.length})</h2>
 
-      {/* Фильтры и переключатель */}
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* Фильтры */}
+      <div style={{ marginBottom: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+
+          {/* Поиск */}
+          <input
+            type="text"
+            placeholder="🔍 Search by name or phone..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              padding: '8px 16px', borderRadius: '20px',
+              border: '1px solid #ddd', background: 'white',
+              fontSize: '14px', width: '220px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              outline: 'none'
+            }}
+          />
+
           {/* Фильтр по типу */}
           {['All', 'Buy', 'Sell'].map(f => (
             <button key={f} onClick={() => setTypeFilter(f)} style={{
@@ -73,6 +104,22 @@ function Leads() {
               {f === 'All' ? '📋 All' : f === 'Buy' ? '🏠 Buy' : '💰 Sell'}
             </button>
           ))}
+
+          {/* Фильтр по Area */}
+          <select
+            value={areaFilter}
+            onChange={e => setAreaFilter(e.target.value)}
+            style={{
+              padding: '8px 16px', borderRadius: '20px',
+              border: '1px solid #ddd', background: 'white',
+              fontSize: '14px', cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            {areas.map(a => (
+              <option key={a} value={a}>{a === 'All' ? '📍 All Areas' : a}</option>
+            ))}
+          </select>
 
           {/* Фильтр по риелтору */}
           <select
@@ -185,30 +232,18 @@ function Leads() {
                   </span>
                   <span style={{ fontSize: '12px', color: '#999' }}>{formatDate(l.created_at)}</span>
                 </div>
-
                 <div style={{ marginBottom: '8px' }}>
                   <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '4px' }}>👤 {l.client_name}</div>
                   <div style={{ color: '#555', fontSize: '14px' }}>📞 {l.phone}</div>
                 </div>
-
-                {l.address && (
-                  <div style={{ color: '#555', fontSize: '13px', marginBottom: '4px' }}>
-                    📍 {l.address}
-                  </div>
-                )}
-                {l.area && (
-                  <div style={{ color: '#555', fontSize: '13px', marginBottom: '8px' }}>
-                    🗺️ {l.area}
-                  </div>
-                )}
-
+                {l.address && <div style={{ color: '#555', fontSize: '13px', marginBottom: '4px' }}>📍 {l.address}</div>}
+                {l.area && <div style={{ color: '#555', fontSize: '13px', marginBottom: '8px' }}>🗺️ {l.area}</div>}
                 <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: '#555', marginBottom: '8px' }}>
                   {l.budget && <span>💰 ${l.budget.toLocaleString()}</span>}
                   {l.beds && <span>🛏 {l.beds} beds</span>}
                   {l.baths && <span>🚿 {l.baths} baths</span>}
                   {l.sqft && <span>📏 {l.sqft} sqft</span>}
                 </div>
-
                 <div style={{ fontSize: '12px', color: '#999', borderTop: '1px solid #f0f0f0', paddingTop: '8px', marginTop: '8px' }}>
                   👔 {getRealtorName(l.realtor_id)}
                 </div>
