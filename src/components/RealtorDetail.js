@@ -34,6 +34,7 @@ function RealtorDetail() {
 
   useEffect(() => {
     fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const isActive = (r) => r?.active_until && new Date(r.active_until) > new Date()
