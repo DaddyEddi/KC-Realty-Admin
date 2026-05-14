@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 function Dashboard() {
+  const navigate = useNavigate()
   const [stats, setStats] = useState({
     totalRealtors: 0,
     activeRealtors: 0,
@@ -13,6 +15,7 @@ function Dashboard() {
     todayLeads: 0
   })
   const [chartData, setChartData] = useState([])
+  const [topRealtors, setTopRealtors] = useState([])
   const [loading, setLoading] = useState(true)
 
   const fetchStats = async () => {
@@ -37,6 +40,7 @@ function Dashboard() {
         todayLeads: todayLeads.length
       })
 
+      // График — последние 14 дней
       const last14 = []
       for (let i = 13; i >= 0; i--) {
         const date = new Date()
@@ -53,6 +57,30 @@ function Dashboard() {
         })
       }
       setChartData(last14)
+
+      // Top realtors
+      const leadsPerRealtor = {}
+      leads?.forEach(l => {
+        const rid = String(l.realtor_id)
+        if (!leadsPerRealtor[rid]) leadsPerRealtor[rid] = { total: 0, buy: 0, sell: 0 }
+        leadsPerRealtor[rid].total++
+        if (l.type === 'Buy') leadsPerRealtor[rid].buy++
+        else leadsPerRealtor[rid].sell++
+      })
+
+      const top = realtors
+        ?.map(r => ({
+          id: r.id,
+          name: r.name,
+          leads: leadsPerRealtor[String(r.id)]?.total || 0,
+          buy: leadsPerRealtor[String(r.id)]?.buy || 0,
+          sell: leadsPerRealtor[String(r.id)]?.sell || 0,
+          active: r.active_until && r.active_until > now
+        }))
+        .sort((a, b) => b.leads - a.leads)
+        .slice(0, 5)
+
+      setTopRealtors(top || [])
       setLoading(false)
     } catch (error) {
       console.error('fetchStats error:', error)
@@ -61,9 +89,10 @@ function Dashboard() {
   }
 
   useEffect(() => {
-  fetchStats()
-  const interval = setInterval(fetchStats, 60000) // каждые 60 секунд
-  return () => clearInterval(interval) // очистка при закрытии
+    fetchStats()
+    const interval = setInterval(fetchStats, 60000)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const cards = [
@@ -81,6 +110,7 @@ function Dashboard() {
     <div style={{ padding: '32px', background: '#f0f2f5', minHeight: '100vh' }}>
       <h2 style={{ marginBottom: '24px', color: '#1a1a2e' }}>📊 Dashboard</h2>
 
+      {/* Карточки */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
@@ -102,23 +132,74 @@ function Dashboard() {
         ))}
       </div>
 
-      <div style={{
-        background: 'white', borderRadius: '12px',
-        padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-      }}>
-        <h3 style={{ marginBottom: '20px', color: '#1a1a2e' }}>📈 Leads — Last 14 Days</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="Total" stroke="#3498db" strokeWidth={2} dot={{ r: 4 }} />
-            <Line type="monotone" dataKey="Buy" stroke="#27ae60" strokeWidth={2} dot={{ r: 4 }} />
-            <Line type="monotone" dataKey="Sell" stroke="#e74c3c" strokeWidth={2} dot={{ r: 4 }} />
-          </LineChart>
-        </ResponsiveContainer>
+      {/* График и Top Realtors */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '32px' }}>
+
+        {/* График */}
+        <div style={{
+          background: 'white', borderRadius: '12px',
+          padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }}>
+          <h3 style={{ marginBottom: '20px', color: '#1a1a2e' }}>📈 Leads — Last 14 Days</h3>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="Total" stroke="#3498db" strokeWidth={2} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="Buy" stroke="#27ae60" strokeWidth={2} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="Sell" stroke="#e74c3c" strokeWidth={2} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Top Realtors */}
+        <div style={{
+          background: 'white', borderRadius: '12px',
+          padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }}>
+          <h3 style={{ marginBottom: '20px', color: '#1a1a2e' }}>🏆 Top Realtors</h3>
+          {topRealtors.length === 0 ? (
+            <div style={{ color: '#999', textAlign: 'center', padding: '20px' }}>No data yet</div>
+          ) : (
+            topRealtors.map((r, i) => (
+              <div
+                key={r.id}
+                onClick={() => navigate(`/realtors/${r.id}`)}
+                style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '12px 0', borderBottom: i < topRealtors.length - 1 ? '1px solid #f0f0f0' : 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{
+                    width: '28px', height: '28px', borderRadius: '50%',
+                    background: i === 0 ? '#f39c12' : i === 1 ? '#95a5a6' : '#cd7f32',
+                    color: 'white', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: '13px', fontWeight: 'bold', flexShrink: 0
+                  }}>
+                    {i + 1}
+                  </span>
+                  <div>
+                    <div style={{ fontWeight: '600', fontSize: '14px' }}>{r.name}</div>
+                    <div style={{ fontSize: '12px', color: '#999' }}>
+                      🏠 {r.buy} Buy · 💰 {r.sell} Sell
+                    </div>
+                  </div>
+                </div>
+                <div style={{
+                  fontWeight: 'bold', fontSize: '18px',
+                  color: '#3498db'
+                }}>
+                  {r.leads}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   )
