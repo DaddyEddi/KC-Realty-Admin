@@ -41,6 +41,7 @@ function Leads() {
   // Уникальные районы из лидов
   const areas = ['All', ...new Set(leads.map(l => l.area).filter(Boolean))]
 
+  // Фильтрация лидов
   const filtered = leads
     .filter(l => typeFilter === 'All' || l.type === typeFilter)
     .filter(l => realtorFilter === 'All' || String(l.realtor_id) === String(realtorFilter))
@@ -54,6 +55,7 @@ function Leads() {
       )
     })
 
+  // Форматирование даты
   const formatDate = (date) => {
     if (!date) return '—'
     return new Date(date).toLocaleDateString('en-US', {
@@ -62,9 +64,35 @@ function Leads() {
     })
   }
 
+  // Имя риелтора по ID
   const getRealtorName = (id) => {
     const realtor = realtors.find(r => String(r.id) === String(id))
     return realtor ? realtor.name : id
+  }
+
+  // Экспорт отфильтрованных лидов в CSV
+  const exportCSV = () => {
+    const headers = ['Date', 'Type', 'Client', 'Phone', 'Area', 'Budget', 'Beds', 'Baths', 'Realtor']
+    const rows = filtered.map(l => [
+      formatDate(l.created_at),
+      l.type,
+      l.client_name,
+      l.phone,
+      l.area || '',
+      l.budget ? `$${l.budget.toLocaleString()}` : '',
+      l.beds || '',
+      l.baths || '',
+      getRealtorName(l.realtor_id)
+    ])
+
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `leads_${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading...</div>
@@ -73,11 +101,11 @@ function Leads() {
     <div style={{ padding: '32px', background: '#f0f2f5', minHeight: '100vh' }}>
       <h2 style={{ marginBottom: '24px', color: '#1a1a2e' }}>📋 Leads ({filtered.length})</h2>
 
-      {/* Фильтры */}
+      {/* Фильтры и переключатель */}
       <div style={{ marginBottom: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
 
-          {/* Поиск */}
+          {/* Поиск по имени и телефону */}
           <input
             type="text"
             placeholder="🔍 Search by name or phone..."
@@ -106,32 +134,24 @@ function Leads() {
           ))}
 
           {/* Фильтр по Area */}
-          <select
-            value={areaFilter}
-            onChange={e => setAreaFilter(e.target.value)}
-            style={{
-              padding: '8px 16px', borderRadius: '20px',
-              border: '1px solid #ddd', background: 'white',
-              fontSize: '14px', cursor: 'pointer',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}
-          >
+          <select value={areaFilter} onChange={e => setAreaFilter(e.target.value)} style={{
+            padding: '8px 16px', borderRadius: '20px',
+            border: '1px solid #ddd', background: 'white',
+            fontSize: '14px', cursor: 'pointer',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>
             {areas.map(a => (
               <option key={a} value={a}>{a === 'All' ? '📍 All Areas' : a}</option>
             ))}
           </select>
 
           {/* Фильтр по риелтору */}
-          <select
-            value={realtorFilter}
-            onChange={e => setRealtorFilter(e.target.value)}
-            style={{
-              padding: '8px 16px', borderRadius: '20px',
-              border: '1px solid #ddd', background: 'white',
-              fontSize: '14px', cursor: 'pointer',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}
-          >
+          <select value={realtorFilter} onChange={e => setRealtorFilter(e.target.value)} style={{
+            padding: '8px 16px', borderRadius: '20px',
+            border: '1px solid #ddd', background: 'white',
+            fontSize: '14px', cursor: 'pointer',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>
             <option value="All">👥 All Realtors</option>
             {realtors.map(r => (
               <option key={r.id} value={r.id}>{r.name}</option>
@@ -139,20 +159,34 @@ function Leads() {
           </select>
         </div>
 
-        {/* Переключатель вида */}
-        <div style={{ display: 'flex', gap: '4px', background: 'white', borderRadius: '20px', padding: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <button onClick={() => setViewMode('table')} style={{
-            padding: '6px 16px', borderRadius: '16px', border: 'none',
+        {/* Переключатель вида и экспорт */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+
+          {/* Кнопка экспорта в CSV */}
+          <button onClick={exportCSV} style={{
+            padding: '8px 20px', borderRadius: '20px', border: 'none',
             cursor: 'pointer', fontWeight: '600', fontSize: '13px',
-            background: viewMode === 'table' ? '#1a1a2e' : 'transparent',
-            color: viewMode === 'table' ? 'white' : '#666'
-          }}>☰ Table</button>
-          <button onClick={() => setViewMode('cards')} style={{
-            padding: '6px 16px', borderRadius: '16px', border: 'none',
-            cursor: 'pointer', fontWeight: '600', fontSize: '13px',
-            background: viewMode === 'cards' ? '#1a1a2e' : 'transparent',
-            color: viewMode === 'cards' ? 'white' : '#666'
-          }}>⊞ Cards</button>
+            background: '#27ae60', color: 'white',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>
+            📥 Export CSV
+          </button>
+
+          {/* Переключатель Table/Cards */}
+          <div style={{ display: 'flex', gap: '4px', background: 'white', borderRadius: '20px', padding: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+            <button onClick={() => setViewMode('table')} style={{
+              padding: '6px 16px', borderRadius: '16px', border: 'none',
+              cursor: 'pointer', fontWeight: '600', fontSize: '13px',
+              background: viewMode === 'table' ? '#1a1a2e' : 'transparent',
+              color: viewMode === 'table' ? 'white' : '#666'
+            }}>☰ Table</button>
+            <button onClick={() => setViewMode('cards')} style={{
+              padding: '6px 16px', borderRadius: '16px', border: 'none',
+              cursor: 'pointer', fontWeight: '600', fontSize: '13px',
+              background: viewMode === 'cards' ? '#1a1a2e' : 'transparent',
+              color: viewMode === 'cards' ? 'white' : '#666'
+            }}>⊞ Cards</button>
+          </div>
         </div>
       </div>
 
