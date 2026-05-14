@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
+import { useNavigate } from 'react-router-dom'
 
 function Realtors() {
   const [realtors, setRealtors] = useState([])
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-  fetchRealtors()
-  const interval = setInterval(fetchRealtors, 60000)
-  return () => clearInterval(interval)
-  }, [])
+  const navigate = useNavigate()
 
   const fetchRealtors = async () => {
     const { data } = await supabase.from('realtors').select('*').order('created_at', { ascending: false })
     setRealtors(data || [])
     setLoading(false)
   }
+
+  useEffect(() => {
+    fetchRealtors()
+    const interval = setInterval(fetchRealtors, 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   const isActive = (realtor) => {
     if (!realtor.active_until) return false
@@ -53,7 +55,14 @@ function Realtors() {
               </tr>
             ) : (
               realtors.map((r, i) => (
-                <tr key={r.id} style={{ borderBottom: '1px solid #f0f0f0', background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                <tr
+                  key={r.id}
+                  onClick={() => navigate(`/realtors/${r.id}`)}
+                  style={{
+                    borderBottom: '1px solid #f0f0f0',
+                    background: i % 2 === 0 ? 'white' : '#fafafa',
+                    cursor: 'pointer'
+                  }}>
                   <td style={{ padding: '14px 16px', fontWeight: '500' }}>{r.name}</td>
                   <td style={{ padding: '14px 16px', color: '#666', fontSize: '13px' }}>{r.id}</td>
                   <td style={{ padding: '14px 16px', fontSize: '13px' }}>{(r.areas || []).join(', ')}</td>

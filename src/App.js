@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard'
 import Realtors from './components/Realtors'
 import Leads from './components/Leads'
 import Navbar from './components/Navbar'
+import RealtorDetail from './components/RealtorDetail'
 import './App.css'
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/realtors" element={<Realtors />} />
+            <Route path="/realtors/:id" element={<RealtorDetail />} />
             <Route path="/leads" element={<Leads />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
