@@ -74,7 +74,7 @@ function Leads() {
   const exportCSV = () => {
     const headers = ['Date', 'Type', 'Client', 'Phone', 'Area', 'Budget', 'Beds', 'Baths', 'Realtor']
     const rows = filtered.map(l => [
-      formatDate(l.created_at),
+      `"${formatDate(l.created_at)}"`,
       l.type,
       l.client_name,
       l.phone,
